@@ -1,0 +1,220 @@
+#include <stdio.h>
+
+void fcfs(int n, int at[], int bt[]) {
+    int pid[10], wt[10], tat[10], total_wt = 0, total_tat = 0, time = 0;
+    
+    // FCFS Scheduling
+    for (int i = 0; i < n; i++) {
+        pid[i] = i + 1;
+    }
+    
+    for (int i = 0; i < n; i++) {
+        if (time < at[i]) {
+            time = at[i];  // If time is less than arrival time, update time to arrival
+        }
+        time += bt[i];
+        tat[i] = time - at[i];
+        wt[i] = tat[i] - bt[i];
+        total_wt += wt[i];
+        total_tat += tat[i];
+    }
+    
+    printf("\nPID\tAT\tBT\tWT\tTAT\n");
+    for (int i = 0; i < n; i++) {
+        printf("P%d\t%d\t%d\t%d\t%d\n", pid[i], at[i], bt[i], wt[i], tat[i]);
+    }
+    
+    printf("\nAverage Waiting Time = %.2f", (float)total_wt / n);
+    printf("\nAverage Turnaround Time = %.2f\n", (float)total_tat / n);
+}
+
+void sjf(int n, int bt[]) {
+    struct Process {
+        int pid;
+        int burst;
+        int completion;
+        int waiting;
+        int turnaround;
+    };
+
+    int time = 0;
+    float total_waiting = 0, total_turnaround = 0;
+    struct Process p[n];
+
+    // Input Burst Time
+    for (int i = 0; i < n; i++) {
+        p[i].pid = i + 1;
+        printf("P%d\n", i + 1);
+        printf("Burst Time: ");
+        scanf("%d", &p[i].burst);
+    }
+
+    // Sort processes by Burst Time (SJF)
+    for (int i = 0; i < n - 1; i++) {
+        for (int j = i + 1; j < n; j++) {
+            if (p[i].burst > p[j].burst) {
+                struct Process temp = p[i];
+                p[i] = p[j];
+                p[j] = temp;
+            }
+        }
+    }
+
+    // Calculate times
+    for (int i = 0; i < n; i++) {
+        time += p[i].burst;
+        p[i].completion = time;
+        p[i].turnaround = p[i].completion;   // No arrival time
+        p[i].waiting = p[i].turnaround - p[i].burst;
+
+        total_waiting += p[i].waiting;
+        total_turnaround += p[i].turnaround;
+    }
+
+    float avg_waiting = total_waiting / n;
+    float avg_turnaround = total_turnaround / n;
+
+    // Output
+    printf("\nPID\tBT\tCT\tWT\tTAT\n");
+    for (int i = 0; i < n; i++) {
+        printf("%d\t%d\t%d\t%d\t%d\n",
+               p[i].pid,
+               p[i].burst,
+               p[i].completion,
+               p[i].waiting,
+               p[i].turnaround);
+    }
+
+    printf("\nAverage Waiting Time = %.2f", avg_waiting);
+    printf("\nAverage Turnaround Time = %.2f\n", avg_turnaround);
+}
+
+void priority_scheduling(int n, int at[], int bt[], int priority[]) {
+    int pid[10], wt[10], tat[10], ct[10], total_wt = 0, total_tat = 0;
+    int i, j, time = 0;
+
+    // Sort processes based on Arrival Time and Priority
+    for (i = 0; i < n - 1; i++) {
+        for (j = i + 1; j < n; j++) {
+            if (at[i] > at[j] || (at[i] == at[j] && priority[i] > priority[j])) {
+                int temp;
+                temp = at[i]; at[i] = at[j]; at[j] = temp;
+                temp = bt[i]; bt[i] = bt[j]; bt[j] = temp;
+                temp = pid[i]; pid[i] = pid[j]; pid[j] = temp;
+                temp = priority[i]; priority[i] = priority[j]; priority[j] = temp;
+            }
+        }
+    }
+
+    // Process execution
+    for (i = 0; i < n; i++) {
+        if (time < at[i]) {
+            time = at[i];
+        }
+        time += bt[i];
+        ct[i] = time;
+        tat[i] = ct[i] - at[i];
+        wt[i] = tat[i] - bt[i];
+
+        total_wt += wt[i];
+        total_tat += tat[i];
+    }
+
+    printf("\nPID\tAT\tBT\tPriority\tCT\tTAT\tWT\n");
+    for (i = 0; i < n; i++) {
+        printf("P%d\t%d\t%d\t%d\t\t%d\t%d\t%d\n", pid[i], at[i], bt[i], priority[i], ct[i], tat[i], wt[i]);
+    }
+
+    printf("\nAverage Waiting Time = %.2f", (float)total_wt / n);
+    printf("\nAverage Turnaround Time = %.2f\n", (float)total_tat / n);
+}
+
+void round_robin(int n, int at[], int bt[], int time_quantum) {
+    int pid[10], wt[10], tat[10], remaining_bt[10];
+    int total_wt = 0, total_tat = 0, completed = 0, curr_time = 0;
+
+    // Input Arrival Time, Burst Time for each process
+    for (int i = 0; i < n; i++) {
+        pid[i] = i + 1;
+        remaining_bt[i] = bt[i];  // Initialize remaining burst time to burst time
+    }
+
+    // Round Robin Scheduling
+    while (completed < n) {
+        for (int i = 0; i < n; i++) {
+            if (remaining_bt[i] > 0) {
+                if (at[i] <= curr_time) {
+                    if (remaining_bt[i] > time_quantum) {
+                        curr_time += time_quantum;
+                        remaining_bt[i] -= time_quantum;
+                    } else {
+                        curr_time += remaining_bt[i];
+                        wt[i] = curr_time - at[i] - bt[i];
+                        tat[i] = wt[i] + bt[i];
+                        total_wt += wt[i];
+                        total_tat += tat[i];
+                        remaining_bt[i] = 0;
+                        completed++;
+                    }
+                }
+            }
+        }
+    }
+
+    // Display results
+    printf("\nPID\tAT\tBT\tWT\tTAT\n");
+    for (int i = 0; i < n; i++) {
+        printf("P%d\t%d\t%d\t%d\t%d\n", pid[i], at[i], bt[i], wt[i], tat[i]);
+    }
+
+    printf("\nAverage Waiting Time = %.2f", (float)total_wt / n);
+    printf("\nAverage Turnaround Time = %.2f\n", (float)total_tat / n);
+}
+
+int main() {
+    int n, option, time_quantum;
+    int at[10], bt[10], priority[10];
+
+    printf("Enter number of processes: ");
+    scanf("%d", &n);
+
+    // Input Arrival Time and Burst Time for all processes
+    for (int i = 0; i < n; i++) {
+        printf("Arrival time of P%d: ", i + 1);
+        scanf("%d", &at[i]);
+        printf("Burst time of P%d: ", i + 1);
+        scanf("%d", &bt[i]);
+    }
+
+    printf("\nSelect Scheduling Algorithm:\n");
+    printf("1. FCFS\n2. SJF\n3. Priority Scheduling\n4. Round Robin\n");
+    printf("Enter your choice: ");
+    scanf("%d", &option);
+
+    switch (option) {
+        case 1:
+            fcfs(n, at, bt);
+            break;
+        case 2:
+            sjf(n, bt);
+            break;
+        case 3:
+            // Input priority for each process
+            for (int i = 0; i < n; i++) {
+                printf("Priority of P%d: ", i + 1);
+                scanf("%d", &priority[i]);
+            }
+            priority_scheduling(n, at, bt, priority);
+            break;
+        case 4:
+            printf("Enter Time Quantum: ");
+            scanf("%d", &time_quantum);
+            round_robin(n, at, bt, time_quantum);
+            break;
+        default:
+            printf("Invalid option selected.\n");
+            break;
+    }
+
+    return 0;
+}
