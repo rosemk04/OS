@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <semaphore.h>
 
-#define SIZE 10
+#define SIZE 5
 
 int buffer[SIZE];
 int in = 0;
@@ -12,78 +12,84 @@ int count = 0;
 sem_t empty;
 sem_t full;
 
-void produce(int item)
-{
-    if(count == SIZE)
-    {
+// Function to display items in buffer like an array
+void display_buffer() {
+    if(count == 0) {
+        printf("Buffer is empty.\n");
+        return;
+    }
+
+    printf("Buffer items: [");
+    int i = out;
+    for(int c = 0; c < count; c++) {
+        printf("%d", buffer[i]); 
+        i = (i + 1) % SIZE;      
+
+        if(c < count - 1)      
+            printf(" ");
+    }
+    printf("]\n");
+}
+
+// Produce function
+void produce(int item) {
+    if(count == SIZE) {
         printf("Buffer is full. Cannot produce more items.\n");
         return;
     }
-
     sem_wait(&empty);
-
     buffer[in] = item;
     in = (in + 1) % SIZE;
     count++;
-
     printf("Produced %d | Items in buffer: %d\n", item, count);
-
     sem_post(&full);
+
+    display_buffer(); // Show buffer after producing
 }
 
-void consume()
-{
-    if(count == 0)
-    {
+// Consume function
+void consume() {
+    if(count == 0) {
         printf("Buffer is empty. Cannot consume.\n");
         return;
     }
-
     sem_wait(&full);
-
     int item = buffer[out];
     out = (out + 1) % SIZE;
     count--;
-
     printf("Consumed %d | Items in buffer: %d\n", item, count);
-
     sem_post(&empty);
+
+    display_buffer(); // Show buffer after consuming
 }
 
-int main()
-{
+int main() {
     int choice, item;
 
     sem_init(&empty, 0, SIZE);
     sem_init(&full, 0, 0);
 
-    while(1)
-    {
+    while(1) {
         printf("\n1. Produce\n2. Consume\n3. Exit\n");
         printf("Enter your choice: ");
         scanf("%d",&choice);
 
-        switch(choice)
-        {
+        switch(choice) {
             case 1:
                 printf("Enter the item to produce: ");
                 scanf("%d",&item);
                 produce(item);
                 break;
-
             case 2:
                 consume();
                 break;
-
             case 3:
                 printf("Program Exited.\n");
-                sem_destroy(&empty);
-                sem_destroy(&full);
                 exit(0);
-
             default:
                 printf("Invalid option\n");
         }
     }
+
     return 0;
 }
