@@ -1,0 +1,67 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <semaphore.h>
+#include <unistd.h> 
+
+#define SIZE 10 
+
+int buffer[SIZE]; 
+int in = 0;    
+int out = 0;    
+int count = 0;   
+
+sem_t empty;  
+sem_t full;  
+
+void produce(int item) {
+    sem_wait(&empty);  
+    buffer[in] = item; 
+    in = (in + 1) % SIZE; 
+    count++; 
+    printf("Produced %d | Items in buffer: %d\n", item, count);
+    sem_post(&full);  
+}
+
+void consume() {
+    sem_wait(&full);  
+    int item = buffer[out];  
+    out = (out + 1) % SIZE; 
+    count--; 
+    printf("Consumed %d | Items in buffer: %d\n", item, count);
+    sem_post(&empty);  
+}
+
+int main() {
+    int choice, item;
+
+    sem_init(&empty, 0, SIZE);  
+    sem_init(&full, 0, 0);     
+   
+    while (1) {
+        printf("\n1. Produce\n2. Consume\n3. Exit\n");
+        printf("Enter your choice: ");
+        scanf("%d", &choice);
+
+        switch (choice) {
+            case 1:
+                printf("Enter the item to produce: ");
+                scanf("%d", &item);
+                produce(item);
+                break;
+
+            case 2:
+                consume();
+                break;
+
+            case 3:
+                printf("Program Exited.\n");
+                sem_destroy(&empty); 
+                sem_destroy(&full);
+                exit(0);  
+
+            default:
+                printf("Invalid option! Please choose again.\n");
+        }
+    }
+    return 0;
+}
