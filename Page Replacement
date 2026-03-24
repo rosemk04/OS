@@ -2,10 +2,6 @@
 #include <stdlib.h>
 #define MAX 1000
 
-void generateReference(int ref[], int n) {
-    for (int i = 0; i < n; i++)
-        ref[i] = rand() % 10;
-}
 /* FIFO */
 int fifo(int ref[], int n, int frames) {
     int frame[10], front = 0, faults = 0;
